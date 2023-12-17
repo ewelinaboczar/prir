@@ -22,15 +22,16 @@ void sitoEratostenesa(int n, bool prime[]) {
 }
 
 void sitoEratostenesaOpenMP(int n, bool prime[]) {
-    #pragma omp parallel for
+    #pragma omp parallel for num_threads(4)
     for (int i = 0; i <= n; i++) {
         prime[i] = true;
     }
 
     // Algorytm sita Eratostenesa
-    #pragma omp parallel
+    #pragma omp parallel num_threads(4)
     for (int p = 2; p * p <= n; p++) {
         if (prime[p] == true) {
+            bool local_prime_p = prime[p];
             #pragma omp for
             for (int i = p * p; i <= n; i += p) {
                 prime[i] = false;
