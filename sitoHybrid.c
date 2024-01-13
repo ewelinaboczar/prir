@@ -5,7 +5,7 @@
 #include <math.h>
 
 // mpicc -fopenmp sitoHybrid.c -o sitoHybrid -lm
-// mpirun --allow-run-as-root -np 5 ./sitoHybrid 100
+// mpirun --allow-run-as-root -np 5 ./sitoHybrid <liczba_watkow> <liczba>
 
 // Definicje stałych do obliczeń bloków
 #define FIRST_PRIME 3
@@ -55,8 +55,8 @@ int main(int argc, char** argv) {
     // Pobranie wartości z argumentów
     n = atoi(argv[2]);
     numThreads = atoi(argv[1]);
-    MPI_Init(&argc, &argv);
 
+    MPI_Init(&argc, &argv);
     elapsed_time = -MPI_Wtime();
 
     MPI_Comm_rank(MPI_COMM_WORLD, &process_id);
@@ -92,7 +92,7 @@ int main(int argc, char** argv) {
         if (primes[prime])
             continue;
 
-        #pragma omp parallel for num_threads(numThreads)
+        #pragma omp parallel for num_threads(numThreads) schedule(static)
         for (multiple_of_prime = prime << 1; multiple_of_prime <= sqrt_n; multiple_of_prime += prime) {
             primes[multiple_of_prime] = true;
         }
