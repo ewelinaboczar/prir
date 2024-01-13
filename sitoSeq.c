@@ -43,7 +43,7 @@ void printSito(int n, bool prime[]) {
 }
 
 int main(int argc, char *argv[]) {
-    int values[] = {300000, 500000, 1000000, 1500000, 2000000, 50000000};
+    int values[] = {1000, 50000, 300000, 500000, 1000000, 1500000, 2000000, 10000000};
 
     printf("Sekwancyjnie\n--------------------------------------------\n");
 

@@ -5,7 +5,7 @@
 #include <math.h>
 
 // mpicc sitoMPI.c -o sitoMPI -lm
-// mpirun --allow-run-as-root -np 5 ./sitoMPI
+// mpirun --allow-run-as-root -np 5 ./sitoMPI <liczba>
 
 // Definicje stałych do obliczeń bloków
 #define FIRST_PRIME 3
