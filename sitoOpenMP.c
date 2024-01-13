@@ -6,12 +6,12 @@
 #include <time.h>
 
 // gcc -fopenmp sitoOpenMP.c -o sito
-// ./sito
+// ./sito <liczba_wątków>
 
 // Funkcja realizująca sito Eratostenesa dla liczb nieparzystych
-int eratosthenesOdd(int lastNumber, bool useOpenMP) {
-    // Włączanie/wyłączanie OpenMP
-    omp_set_num_threads(useOpenMP ? omp_get_num_procs() : 1);
+int eratosthenesOdd(int lastNumber, int numThreads) {
+    // Włączanie OpenMP z zadaną liczbą wątków
+    omp_set_num_threads(numThreads);
 
     // Ograniczenie warunku w pętli dla optymalizacji OpenMP
     const int lastNumberSqrt = (int)sqrt((double)lastNumber);
@@ -44,9 +44,19 @@ int eratosthenesOdd(int lastNumber, bool useOpenMP) {
     return found;
 }
 
-int main() {
-    int lastNumber = 100;
-    bool useOpenMP = true;
+int main(int argc, char** argv) {
+    int lastNumber;
+    int numThreads;
+
+    // Sprawdzenie, czy podano odpowiednią liczbę argumentów
+    if (argc != 3) {
+        printf("Użycie: %s <liczba_wątków> <liczba>\n", argv[0]);
+        return 1;
+    }
+
+    // Pobranie wartości z argumentów
+    numThreads = atoi(argv[1]);
+    lastNumber = atoi(argv[2]);
 
     clock_t start, end;
     double cpu_time_used;
@@ -54,7 +64,7 @@ int main() {
     // Pomiar czasu rozpoczyna się
     start = clock();
     // Wywołanie funkcji
-    int primeCount = eratosthenesOdd(lastNumber, useOpenMP);
+    int primeCount = eratosthenesOdd(lastNumber, numThreads);
     // Pomiar czasu kończy się
     end = clock();
 
