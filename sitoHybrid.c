@@ -42,20 +42,27 @@ int main(int argc, char** argv) {
     bool* marked;           // tablica oznaczająca liczby do skreślenia
     bool* primes;           // tablica oznaczająca liczby pierwsze
 
+    int numThreads;
+
+    // Sprawdzenie, czy podano odpowiednią liczbę argumentów
+    if (argc != 3) {
+        if (process_id == 0)
+            printf("Użycie: %s <liczba_wątków> <liczba>\n", argv[0]);
+        MPI_Finalize();
+        exit(1);
+    }
+
+    // Pobranie wartości z argumentów
+    n = atoi(argv[2]);
+    numThreads = atoi(argv[1]);
     MPI_Init(&argc, &argv);
+
     elapsed_time = -MPI_Wtime();
 
     MPI_Comm_rank(MPI_COMM_WORLD, &process_id);
     MPI_Comm_size(MPI_COMM_WORLD, &num_processes);
 
-    if (argc != 2) {
-        if (process_id == 0)
-            printf("Użycie: %s <m>\n", argv[0]);
-        MPI_Finalize();
-        exit(1);
-    }
 
-    n = atoi(argv[1]);
 
     // Obliczenia dotyczące bloków i rozmiaru
     low_value = FIRST_PRIME + BLOCK_LOW(process_id, num_processes, n - 1) * PRIME_STEP;
@@ -75,17 +82,17 @@ int main(int argc, char** argv) {
     sqrt_n = sqrt(n);
     primes = (bool*)calloc(sqrt_n + 1, sizeof(bool));
 
-    #pragma omp parallel for num_threads(4)
+    #pragma omp parallel for num_threads(numThreads)
     for (multiple_of_prime = 2; multiple_of_prime <= sqrt_n; multiple_of_prime += 2) {
         primes[multiple_of_prime] = true;
     }
 
-    #pragma omp parallel for num_threads(4)
+    #pragma omp parallel for num_threads(numThreads)
     for (prime = 3; prime <= sqrt_n; prime += 2) {
         if (primes[prime])
             continue;
 
-        #pragma omp parallel for num_threads(4)
+        #pragma omp parallel for num_threads(numThreads)
         for (multiple_of_prime = prime << 1; multiple_of_prime <= sqrt_n; multiple_of_prime += prime) {
             primes[multiple_of_prime] = true;
         }
@@ -105,10 +112,10 @@ int main(int argc, char** argv) {
     block_high_value = MIN(high_value, low_value + num_per_block * PRIME_STEP);
 
     // Iteracja przez bloki
-    #pragma omp parallel for num_threads(4) schedule(dynamic)
+    #pragma omp parallel for num_threads(numThreads) schedule(dynamic)
     for (first_index_in_block = 0; first_index_in_block < block_size; first_index_in_block += num_per_block) {
         // Iteracja po liczbach pierwszych
-        #pragma omp parallel for num_threads(4) schedule(dynamic)
+        #pragma omp parallel for num_threads(numThreads) schedule(dynamic)
         for (prime = 3; prime <= sqrt_n; prime++) {
             if (primes[prime])
                 continue;
@@ -143,7 +150,7 @@ int main(int argc, char** argv) {
 
     // Zliczanie liczb pierwszych na danym procesie
     local_count = 0;
-    #pragma omp parallel for num_threads(4) reduction(+:local_count)
+    #pragma omp parallel for num_threads(numThreads) reduction(+:local_count)
     for (int i = 0; i < block_size; i++)
         if (!marked[i])
             local_count++;
