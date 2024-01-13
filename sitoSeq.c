@@ -6,7 +6,9 @@
 // gcc sitoSeq.c -o sito
 // ./sito
 
-void sitoEratostenesa(int n, bool prime[]) {
+int sitoEratostenesa(int n, bool prime[]) {
+    int found = 0;
+
     for (int i = 0; i <= n; i++) {
         prime[i] = true;
     }
@@ -19,6 +21,14 @@ void sitoEratostenesa(int n, bool prime[]) {
             }
         }
     }
+
+    // Zliczanie liczb pierwszych
+    for (int i = 2; i <= n; i++) {
+        if (prime[i])
+            found++;
+    }
+
+    return found;
 }
 
 
@@ -38,6 +48,7 @@ int main(int argc, char *argv[]) {
     printf("Sekwancyjnie\n--------------------------------------------\n");
 
     for (int i = 0; i < sizeof(values) / sizeof(values[0]); i++) {
+        int found = 0;
         double cpu_time_used;
         clock_t start = 0, end = 0;
 
@@ -48,12 +59,13 @@ int main(int argc, char *argv[]) {
         }
 
         start = clock();
-        sitoEratostenesa(values[i], prime);
+        found = sitoEratostenesa(values[i], prime);
         end = clock();
 
         //printSito(values[i], prime);
 
         cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+        printf("Liczba liczb pierwszych mniejszych lub równych %d: %d\n", values[i], found);
         printf("Czas wykonania dla n = %d: %f sekundy\n", values[i], cpu_time_used);
 
         free(prime);
