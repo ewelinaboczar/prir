@@ -4,6 +4,9 @@
 #include <omp.h>
 #include <math.h>
 
+// gcc -fopenmp sitoOpenMP.c -o sitoOpenMP -lm
+// ./sitoOpenMP <liczba_watkow> <liczba>
+
 #define sieve_num size_t
 
 void sitoEratostenesaOpenMP(int n, bool prime[], int numThreads, float max_n) {
