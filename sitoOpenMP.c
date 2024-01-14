@@ -5,48 +5,55 @@
 #include <omp.h>
 #include <time.h>
 
-// gcc -fopenmp sitoOpenMP.c -o sito -lm
-// ./sito <liczba_wątków> <liczba>
+// gcc -fopenmp sitoOpenMP.c -o sitoOMP -lm
+// ./sitoOMP <liczba_wątków> <liczba>
 
-// Funkcja realizująca sito Eratostenesa dla liczb nieparzystych
-int eratosthenesOdd(int lastNumber, int numThreads) {
+int eratosthenesSieve(int n, int numThreads) {
     // Włączanie OpenMP z zadaną liczbą wątków
     omp_set_num_threads(numThreads);
 
-    // Ograniczenie warunku w pętli dla optymalizacji OpenMP
-    const int lastNumberSqrt = (int)sqrt((double)lastNumber);
-    int memorySize = (lastNumber - 1) / 2;
+    int found;
 
-    // Inicjalizacja tablicy isPrime, reprezentującej liczby pierwsze
-    char* isPrime = (char*)malloc((memorySize + 1) * sizeof(char));
+    if (n >= 2)
+        found = 1;
+      else
+        found = 0;
 
-    // Ustawienie wszystkich wartości na 1 (liczba pierwsza)
+    // Ograniczenie warunku w pętli dla optymalizacji OpenMP (zamiast i*i <= n piszemy i <k= nSqrt)
+    const int nSqrt = (int)sqrt((double)n);
+
+    // Alokacja pamięci
+    int alloc = (n - 1) / 2;
+    char *prime = (char*)malloc((alloc + 1) * sizeof(char));
+
+    // Ustawianie wszystkich wartości jako liczby pierwsze
     #pragma omp parallel for
-    for (int i = 0; i <= memorySize; i++)
-        isPrime[i] = 1;
+    for (int i = 0; i <= alloc; i++)
+        prime[i] = 1;
 
-    // Wykreślanie liczb nieparzystych, które nie są pierwsze
+    // Algorytm sita Eratostenesa - ustawianie wielokrotności liczb na niepierwsze
     #pragma omp parallel for schedule(dynamic)
-    for (int i = 3; i <= lastNumberSqrt; i += 2)
-        if (isPrime[i / 2])
-            for (int j = i * i; j <= lastNumber; j += 2 * i)
-                isPrime[j / 2] = 0;
+    for (int i = 3; i <= nSqrt; i += 2)
+        if (prime[i / 2])
+            for (int j = i * i; j <= n; j += 2 * i)
+                prime[j / 2] = 0;
 
-    // Obliczanie liczby liczb pierwszych
-    int found = lastNumber >= 2 ? 1 : 0;
-
+    // Zliczanie liczb pierwszych
     #pragma omp parallel for reduction(+:found)
-    for (int i = 1; i <= memorySize; i++)
-        found += isPrime[i];
+    for (int i = 1; i <= alloc; i++)
+        found += prime[i];
 
-    // Zwolnienie zaalokowanej pamięci
-    free(isPrime);
+    free(prime);
+
     return found;
 }
 
 int main(int argc, char** argv) {
-    int lastNumber;
-    int numThreads;
+    int n = 0;
+    int numThreads = 0;
+    int primeCount = 0;
+    double cpu_time_used;
+    clock_t start, end;
 
     // Sprawdzenie, czy podano odpowiednią liczbę argumentów
     if (argc != 3) {
@@ -56,24 +63,17 @@ int main(int argc, char** argv) {
 
     // Pobranie wartości z argumentów
     numThreads = atoi(argv[1]);
-    lastNumber = atoi(argv[2]);
+    n = atoi(argv[2]);
 
-    clock_t start, end;
-    double cpu_time_used;
-
-    // Pomiar czasu rozpoczyna się
+    // Pomiar czasu
     start = clock();
-    // Wywołanie funkcji
-    int primeCount = eratosthenesOdd(lastNumber, numThreads);
-    // Pomiar czasu kończy się
+    primeCount = eratosthenesSieve(n, numThreads);
     end = clock();
 
-    // Obliczenie czasu wykonywania programu w sekundach
     cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
 
-    // Wyświetlenie wyników
-    printf("Liczba liczb pierwszych mniejszych lub równych %d: %d\n", lastNumber, primeCount);
-    printf("Czas wykonania: %f sekundy\n", cpu_time_used);
+    printf("%d liczb pierwszych jest mniejszych lub rownych %d\n", primeCount, n);
+    printf("Czas wykonania: %10.6f sekundy\n", cpu_time_used);
 
     return 0;
 }
