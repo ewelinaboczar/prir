@@ -60,7 +60,7 @@ int eratosthenesSieve(int n) {
 int main(int argc, char *argv[]) {
 
     // Wykonanie algorytmu dla roznych zakresow
-    int values[] = {1000, 50000, 300000, 500000, 1000000, 1500000, 2000000, 10000000};
+    int values[] = {1000, 50000, 300000, 500000, 1000000, 1500000, 2000000, 10000000, 50000000, 100000000};
 
     for (int i = 0; i < sizeof(values) / sizeof(values[0]); i++) {
         int found = 0;
