@@ -5,8 +5,8 @@
 #include <omp.h>
 #include <time.h>
 
-// gcc -fopenmp sitoOpenMP.c -o sito -lm
-// ./sito <liczba_wątków> <liczba>
+// gcc -fopenmp sitoOpenMP.c -o sitoOpenMP -lm
+// ./sitoOpenMP <liczba_wątków> <liczba>
 
 // Funkcja realizująca sito Eratostenesa dla liczb nieparzystych
 int eratosthenesOdd(int lastNumber, int numThreads) {
