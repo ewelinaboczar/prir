@@ -1,79 +1,68 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include <math.h>
 #include <omp.h>
-#include <time.h>
+#include <math.h>
 
-// gcc -fopenmp sitoOpenMP.c -o sitoOpenMP -lm
-// ./sitoOpenMP <liczba_wątków> <liczba>
+#define sieve_num size_t
 
-// Funkcja realizująca sito Eratostenesa dla liczb nieparzystych
-int eratosthenesOdd(int lastNumber, int numThreads) {
-    // Włączanie OpenMP z zadaną liczbą wątków
+void sitoEratostenesaOpenMP(int n, bool prime[], int numThreads, float max_n) {
     omp_set_num_threads(numThreads);
 
-    // Ograniczenie warunku w pętli dla optymalizacji OpenMP
-    const int lastNumberSqrt = (int)sqrt((double)lastNumber);
-    int memorySize = (lastNumber - 1) / 2;
-
-    // Inicjalizacja tablicy isPrime, reprezentującej liczby pierwsze
-    char* isPrime = (char*)malloc((memorySize + 1) * sizeof(char));
-
-    // Ustawienie wszystkich wartości na 1 (liczba pierwsza)
-    #pragma omp parallel for
-    for (int i = 0; i <= memorySize; i++)
-        isPrime[i] = 1;
-
-    // Wykreślanie liczb nieparzystych, które nie są pierwsze
-    #pragma omp parallel for schedule(dynamic)
-    for (int i = 3; i <= lastNumberSqrt; i += 2)
-        if (isPrime[i / 2])
-            for (int j = i * i; j <= lastNumber; j += 2 * i)
-                isPrime[j / 2] = 0;
-
-    // Obliczanie liczby liczb pierwszych
-    int found = lastNumber >= 2 ? 1 : 0;
-
-    #pragma omp parallel for reduction(+:found)
-    for (int i = 1; i <= memorySize; i++)
-        found += isPrime[i];
-
-    // Zwolnienie zaalokowanej pamięci
-    free(isPrime);
-    return found;
+    // Algorytm sita Eratostenesa
+    #pragma omp parallel for firstprivate(max_n) firstprivate(prime) schedule(static)
+    for (size_t p = 2; p <= (size_t)max_n; p++) {
+        if (!prime[p]) {
+            #pragma omp parallel for firstprivate(p) schedule(static)
+            for (int i = p * p; i <= n; i += p) {
+                prime[i] = true;
+            }
+        }
+    }
 }
 
-int main(int argc, char** argv) {
-    int lastNumber;
-    int numThreads;
+void printSito(int n, bool prime[]) {
+    printf("Liczby pierwsze do %d:\n", n);
+    for (size_t p = 2; p <= n; p++) {
+        if (!prime[p]) {
+            printf("%ld ", p);
+        }
+    }
+    printf("\n");
+}
 
-    // Sprawdzenie, czy podano odpowiednią liczbę argumentów
+int main(int argc, char *argv[]) {
     if (argc != 3) {
-        printf("Użycie: %s <liczba_wątków> <liczba>\n", argv[0]);
+        fprintf(stderr, "Użycie: %s <liczba_wątków> <n>\n", argv[0]);
         return 1;
     }
 
-    // Pobranie wartości z argumentów
-    numThreads = atoi(argv[1]);
-    lastNumber = atoi(argv[2]);
+    int numThreads = atoi(argv[1]);
+    int n = atoi(argv[2]);
+    size_t max_n = sqrtf((size_t)n);
+    size_t global_count = 0;
 
-    clock_t start, end;
-    double cpu_time_used;
+    bool *prime = (bool *)malloc((n + 1) * sizeof(bool));
+    if (prime == NULL) {
+        fprintf(stderr, "Błąd alokacji pamięci.\n");
+        return 1;
+    }
 
-    // Pomiar czasu rozpoczyna się
-    start = clock();
-    // Wywołanie funkcji
-    int primeCount = eratosthenesOdd(lastNumber, numThreads);
-    // Pomiar czasu kończy się
-    end = clock();
+    double start = omp_get_wtime();
+    sitoEratostenesaOpenMP(n, prime, numThreads, max_n);
+    double end = omp_get_wtime();
 
-    // Obliczenie czasu wykonywania programu w sekundach
-    cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+    //printSito(n, prime);
 
-    // Wyświetlenie wyników
-    printf("Liczba liczb pierwszych mniejszych lub równych %d: %d\n", lastNumber, primeCount);
-    printf("Czas wykonania: %f sekundy\n", cpu_time_used);
+    for (int i = 2; i <= n; i++) {
+            if (!prime[i]) {
+                global_count++;
+            }
+        }
 
+    printf("%zu liczb pierwszych jest mniejszych lub równych %d\n", global_count, n);
+    printf("Całkowity czas wykonania: %10.6fs\n", end - start);
+
+    free(prime);
     return 0;
 }
